@@ -72,6 +72,12 @@ function getShortURL(address, domain) {
   return { address, link, url };
 }
 
+function generateShortLink(address, domain) {
+  const protocol =
+    env.CUSTOM_DOMAIN_USE_HTTPS || !domain ? "https://" : "http://";
+  return `${protocol}${domain || env.DEFAULT_DOMAIN}/${address}`;
+};
+
 function statsObjectToArray(obj) {
   const objToArr = (key) =>
     Array.from(Object.keys(obj[key]))
@@ -259,7 +265,7 @@ const sanitize = {
       relative_expire_in: link.expire_in && ms(differenceInMilliseconds(parseDatetime(link.expire_in), new Date()), { long: true }),
       password: !!link.password,
       visit_count: link.visit_count.toLocaleString("en-US"),
-      link: getShortURL(link.address, link.domain)
+      link: generateShortLink(link.address, link.domain)
     }
   },
   link_admin: link => {
