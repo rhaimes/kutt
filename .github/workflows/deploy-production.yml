@@ -1,0 +1,52 @@
+name: deploy-production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-kutt-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Install & deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync to Lightsail
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            ./ bitnami@${{ secrets.LIGHTSAIL_HOST }}:/home/bitnami/apps/kutt/kutt/
+
+      - name: Reload PM2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: bitnami
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /home/bitnami/apps
+            pm2 startOrReload ecosystem.config.js --only kutt --update-env
+            pm2 save
