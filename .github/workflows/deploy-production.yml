@@ -48,5 +48,5 @@ jobs:
           script: |
             set -e
             cd /home/bitnami/apps
-            pm2 startOrReload ecosystem.config.js --only kutt --update-env
+            pm2 startOrRestart ecosystem.config.js --only kutt-api --update-env
             pm2 save
