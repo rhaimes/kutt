@@ -36,7 +36,7 @@ jobs:
           rsync -az --delete \
             --exclude '.git' \
             --exclude '.github' \
-            ./ bitnami@${{ secrets.LIGHTSAIL_HOST }}:/home/bitnami/apps/kutt/kutt/
+            ./ bitnami@${{ secrets.LIGHTSAIL_HOST }}:/home/bitnami/apps/kutt/kutt-api/
 
       - name: Reload PM2
         uses: appleboy/ssh-action@v1
